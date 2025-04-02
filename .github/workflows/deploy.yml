@@ -169,6 +169,8 @@ jobs:
           #script_stop: true
           script: |
             set -e
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.h
             source $HOME/.bashrc
             basedir=$HOME/shiro
             workdir=$basedir/${{ github.run_number }}
