@@ -170,7 +170,7 @@ jobs:
           script: |
             set -e
             export NVM_DIR=~/.nvm
-            source ~/.nvm/nvm.h
+            source ~/.nvm/nvm.sh
             source $HOME/.bashrc
             basedir=$HOME/shiro
             workdir=$basedir/${{ github.run_number }}
