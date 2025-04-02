@@ -166,7 +166,7 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          script_stop: true
+          #script_stop: true
           script: |
             set -e
             source $HOME/.bashrc
