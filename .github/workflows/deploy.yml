@@ -110,16 +110,63 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build project
-        run: |
-          pnpm run build
-          cd apps/web
-          sh standalone-bundle.sh
+      # Make tailwindcss CLI available to all packages (needed by shiro-types build)
+      - name: Setup build tools path
+        run: echo "$GITHUB_WORKSPACE/apps/web/node_modules/.bin" >> $GITHUB_PATH
 
-      - name: Prepare release artifact
+      - name: Build project
+        run: pnpm run build
+
+      - name: Bundle standalone output
         run: |
-          mkdir -p assets
-          cp apps/web/assets/release.zip assets/release.zip
+          cd apps/web/.next
+          rm -rf cache
+
+          # Detect monorepo standalone structure
+          if [ -f "standalone/apps/web/server.js" ]; then
+            APP_DIR="standalone/apps/web"
+            echo "Detected monorepo standalone structure: $APP_DIR"
+          else
+            APP_DIR="standalone"
+            echo "Detected standard standalone structure: $APP_DIR"
+          fi
+
+          # Copy public assets
+          cp -r ../public $APP_DIR/public
+
+          # Append process title
+          echo ';process.title = "Shiro (NextJS)"' >> $APP_DIR/server.js
+
+          # Move static assets into app's .next directory
+          # static/ is at .next/static/ (sibling of standalone/)
+          if [ -d "static" ]; then
+            mkdir -p $APP_DIR/.next
+            mv static/ $APP_DIR/.next/static
+          fi
+
+          # Create PM2 ecosystem config
+          cat > $APP_DIR/ecosystem.config.js << 'EOFPM2'
+          module.exports = {
+            apps: [
+              {
+                name: 'Shiro',
+                script: 'server.js',
+                autorestart: true,
+                watch: false,
+                max_memory_restart: '512M',
+                env: {
+                  NODE_ENV: 'production',
+                  PORT: 2323,
+                },
+              },
+            ],
+          }
+          EOFPM2
+
+          # Create release zip
+          mkdir -p $GITHUB_WORKSPACE/assets
+          rm -rf $GITHUB_WORKSPACE/assets/release.zip
+          zip --symlinks -r $GITHUB_WORKSPACE/assets/release.zip ./standalone
 
       - name: Cache Build Artifacts
         uses: actions/cache/save@v4
