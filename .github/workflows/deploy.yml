@@ -110,9 +110,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Make tailwindcss CLI available to all packages (needed by shiro-types build)
-      - name: Setup build tools path
-        run: echo "$GITHUB_WORKSPACE/apps/web/node_modules/.bin" >> $GITHUB_PATH
+      # shiro-types build needs tailwindcss CLI, which is @tailwindcss/cli in v4
+      # Install it at workspace root so all packages can access it
+      - name: Install tailwindcss CLI
+        run: pnpm add -Dw @tailwindcss/cli
 
       - name: Build project
         run: pnpm run build
